@@ -16,11 +16,15 @@ library(gplots)
 library(biomaRt)
 library(EnhancedVolcano)
 library(ggplot2)
-
+library(WebGestaltR)
+library(pathfindR)
 ```
 
 Now for the data:
 ```{r}
+
+Cut_FC=1
+Cut_padj=0.05
 #note that your data might have different names and file paths!!! these are the local files :D
 SSCohort1<- read.csv("processed_cellXgene_Cohort1_pDC.csv")
 SSCohort02<- read.csv("processed_cellXgene_Cohort0-2_pDC.csv")
@@ -29,10 +33,14 @@ colnames(SSCohort1)<-c("X","Group","genes","scores","Log2FC","pVal","pAdj")
 colnames(SSCohort02)<-c("X","Group","genes","scores","Log2FC","pVal","pAdj")
 colnames(wilks)<-c("X","Group","genes","scores","Log2FC","pVal","pAdj")
 
-SSCohort1.up<-subset(SSCohort1,SSCohort1$Group=="COVID")
-SSCohort02.up<-subset(SSCohort02,SSCohort02$Group=="COVID")
-SSCohort1.down<-subset(SSCohort1,SSCohort1$Group=="control")
-SSCohort02.down<-subset(SSCohort02,SSCohort02$Group=="control")
+SSCohort1.Gen<-subset(SSCohort1,SSCohort1$Log2FC>Cut_FC & SSCohort1$pAdj<Cut_padj)
+SSCohort02.Gen <-subset(SSCohort02,SSCohort02$Log2FC>Cut_FC & SSCohort02$pAdj<Cut_padj)
+wilks.Gen<-subset(wilks,wilks$Log2FC>Cut_FC & wilks$pAdj<Cut_padj)
+
+SSCohort1.up<-subset(SSCohort1,SSCohort1$Group=="COVID" & SSCohort1$Log2FC>Cut_FC & SSCohort1$pAdj<Cut_padj)
+SSCohort02.up<-subset(SSCohort02,SSCohort02$Group=="COVID"& SSCohort02$Log2FC>Cut_FC & SSCohort02$pAdj<Cut_padj)
+SSCohort1.down<-subset(SSCohort1,SSCohort1$Group=="control"& SSCohort1$Log2FC>Cut_FC & SSCohort1$pAdj<Cut_padj)
+SSCohort02.down<-subset(SSCohort02,SSCohort02$Group=="control"& SSCohort02$Log2FC>Cut_FC & SSCohort02$pAdj<Cut_padj)
 SSCohort.1.02.up<-merge(SSCohort1.up,SSCohort02.up,by="genes")
 SSCohort.1.02.down<-merge(SSCohort1.down,SSCohort02.down,by="genes")
 
@@ -41,8 +49,26 @@ wilks.down<-subset(wilks,wilks$Group=="Healthy")
 ```
 
 
+for webgestalt you need the text files. remember when you export the textfiles an x appears as the first entry and you need to manually remove this
 ```{r}
-#one can import the full data without cut off
+write.table(SSCohort1.Gen$genes, file = "SSCohort1_generous.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+write.table(SSCohort1.up$genes, file = "SSCohort1_up.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+write.table(SSCohort1.down$genes, file = "SSCohort1_down.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+
+write.table(SSCohort02.Gen$genes, file = "SSCohort02_generous.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+write.table(SSCohort02.up$genes, file = "SSCohort02_up.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+write.table(SSCohort02.down$genes, file = "SSCohort02_down.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+
+write.table(wilks.Gen$genes, file = "wilks_generous.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+write.table(wilks.up$genes, file = "wilks_up.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+write.table(wilks.down$genes, file = "wilks_down.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+```
+
+
+
+one can import the full data without cut off
+```{r}
+
 ESvVS<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_ESvVS_counts_csv.csv")
 ESvVV<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_ESvVV_counts_csv.csv")
 ESvEV<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_ESvEV_counts_csv.csv")
@@ -82,5 +108,88 @@ ESvVV.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq
 ESvVS.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_EVvVS_Gen.csv")
 VSvVV.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_VSvVV_Gen.csv")
 ESvEV.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_ESvEV_Gen.csv")
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+lets find some pathways i guess
+```{r}
+Cohort.1.pathR<-SSCohort1.Gen[,c(3,5,7)] #this is the gene name, fold change, and padj. 
+Cohort.1.pathR.out<-run_pathfindR(Cohort.1.pathR, 
+                               convert2alias = F,
+                               min_gset_size = 5,
+                               max_gset_size = 300)
+
+Cohort.1.pathR.out.clustered<-cluster_enriched_terms(Cohort.1.pathR.out)
+
+enrichment_chart(Cohort.1.pathR.out,
+                 top_terms = 25)
+Res_select<-subset(Cohort.1.pathR.out.clustered,Cluster %in% 1:9)
+enrichment_chart(Res_select,
+                plot_by_cluster = TRUE)
+
+term_gene_heatmap(Cohort.1.pathR.out,
+                  genes_df = Cohort.1.pathR,
+                  num_terms = 20,
+                  use_description = TRUE)
+```
+
+
+
+```{r}
+Cohort.1.up.pathR<-SSCohort1.up[,c(3,5,7)] #this is the gene name, fold change, and padj. 
+Cohort.1.up.pathR.out<-run_pathfindR(Cohort.1.up.pathR, 
+                               convert2alias = F,
+                               min_gset_size = 5,
+                               max_gset_size = 300)
+
+Cohort.1.up.pathR.out.clustered<-cluster_enriched_terms(Cohort.1.up.pathR.out)
+
+enrichment_chart(Cohort.1.up.pathR.out,
+                 top_terms = 25)
+Res_select<-subset(Cohort.1.up.pathR.out.clustered,Cluster %in% 1:9)
+enrichment_chart(Res_select,
+                plot_by_cluster = TRUE)
+
+```
+
+
+
+```{r}
+Cohort.1.down.pathR<-SSCohort1.down[,c(3,5,7)] #this is the gene name, fold change, and padj. 
+Cohort.1.down.pathR.out<-run_pathfindR(Cohort.1.down.pathR, 
+                               convert2alias = F,
+                               min_gset_size = 5,
+                               max_gset_size = 300)
+
+Cohort.1.down.pathR.out.clustered<-cluster_enriched_terms(Cohort.1.down.pathR.out)
+
+enrichment_chart(Cohort.1.down.pathR.out,
+                 top_terms = 25)
+Res_select<-subset(Cohort.1.down.pathR.out.clustered,Cluster %in% 1:9)
+enrichment_chart(Res_select,
+                plot_by_cluster = TRUE)
+
 ```
 
