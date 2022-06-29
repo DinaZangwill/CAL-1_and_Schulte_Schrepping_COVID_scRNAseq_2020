@@ -9,3 +9,78 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(pheatmap)
+library(dplyr)
+library(gplots)
+library(biomaRt)
+library(EnhancedVolcano)
+library(ggplot2)
+
+```
+
+Now for the data:
+```{r}
+#note that your data might have different names and file paths!!! these are the local files :D
+SSCohort1<- read.csv("processed_cellXgene_Cohort1_pDC.csv")
+SSCohort02<- read.csv("processed_cellXgene_Cohort0-2_pDC.csv")
+wilks<-read.csv("processed_cellXgene_Wilks2020_pDC.csv")
+colnames(SSCohort1)<-c("X","Group","genes","scores","Log2FC","pVal","pAdj")
+colnames(SSCohort02)<-c("X","Group","genes","scores","Log2FC","pVal","pAdj")
+colnames(wilks)<-c("X","Group","genes","scores","Log2FC","pVal","pAdj")
+
+SSCohort1.up<-subset(SSCohort1,SSCohort1$Group=="COVID")
+SSCohort02.up<-subset(SSCohort02,SSCohort02$Group=="COVID")
+SSCohort1.down<-subset(SSCohort1,SSCohort1$Group=="control")
+SSCohort02.down<-subset(SSCohort02,SSCohort02$Group=="control")
+SSCohort.1.02.up<-merge(SSCohort1.up,SSCohort02.up,by="genes")
+SSCohort.1.02.down<-merge(SSCohort1.down,SSCohort02.down,by="genes")
+
+wilks.up<-subset(wilks,wilks$Group=="COVID")
+wilks.down<-subset(wilks,wilks$Group=="Healthy")
+```
+
+
+```{r}
+#one can import the full data without cut off
+ESvVS<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_ESvVS_counts_csv.csv")
+ESvVV<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_ESvVV_counts_csv.csv")
+ESvEV<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_ESvEV_counts_csv.csv")
+EVvVS<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_EVvVS_counts_csv.csv")
+EVvVV<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_EVvVV_counts_csv.csv")
+VSvVV<- read.csv("C://Users//DinaZ//Desktop//DRZ_RNAseq_Nov_2021//CSVs_and_such//DRZ_VSvVV_counts_csv.csv")
+
+
+```
+then apply the cutoff
+
+```{r}
+Cut_FC=0.5
+Cut_padj=0.05
+#these are being labeled by [comparison].gen which means the comparison with generous cut-offs. these are good for pathway analysis and such things. 
+EVvVV.Gen<-subset(EVvVV,EVvVV$padj<Cut_padj&abs(EVvVV$log2FoldChange)>Cut_FC)
+ESvVV.Gen<-subset(ESvVV,ESvVV$padj<Cut_padj&abs(ESvVV$log2FoldChange)>Cut_FC)
+EVvVS.Gen<-subset(EVvVS,EVvVS$padj<Cut_padj&abs(EVvVS$log2FoldChange)>Cut_FC)
+ESvVS.Gen<-subset(ESvVS,ESvVS$padj<Cut_padj&abs(ESvVS$log2FoldChange)>Cut_FC)
+VSvVV.Gen<-subset(VSvVV,VSvVV$padj<Cut_padj&abs(VSvVV$log2FoldChange)>Cut_FC)
+ESvEV.Gen<-subset(ESvEV,ESvEV$pvalue<Cut_padj&abs(ESvEV$log2FoldChange)>Cut_FC) #in this comparison we use the pvalue instead of padj as there are no DEGs if I am being honest. 
+
+## and lets remove the full datasets
+rm(EVvVV)
+rm(EVvVS)
+rm(ESvVV)
+rm(ESvVS)
+rm(VSvVV)
+rm(ESvEV)
+```
+
+Or import the following: knowing this is not yet updated with the new DESeq method but neither is the above. i need to talk to more people about that first
+```{r}
+EVvVV.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_EVvVV_Gen.csv")
+EVvVS.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_EVvVS_Gen.csv")
+ESvVV.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_EVvVV_Gen.csv")
+ESvVS.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_EVvVS_Gen.csv")
+VSvVV.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_VSvVV_Gen.csv")
+ESvEV.Gen<-read.csv("C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Gene_list_csv_files//DRZ_ESvEV_Gen.csv")
+```
+

@@ -1,0 +1,57 @@
+---
+title: "DRZ_pDC_exhaust_Other_Data_sets_DEGs_5-12-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+First the packages needed:
+
+```{r}
+library(pheatmap)
+library(dplyr)
+library(gplots)
+library(biomaRt)
+library(EnhancedVolcano)
+library(ggplot2)
+
+```
+
+Now for the data:
+```{r}
+#note that your data might have different names and file paths!!! these are the local files :D
+SSCohort1<- read.csv("C://Users//DinaZ//Downloads//processed_cellXgene_Cohort1_pDC.csv")
+SSCohort02<- read.csv("C://Users//DinaZ//Downloads//processed_cellXgene_Cohort0-2_pDC.csv")
+colnames(SSCohort1)<-c("X","Group","genes","scores","Log2FC","pVal","pAdj")
+colnames(SSCohort02)<-c("X","Group","genes","scores","Log2FC","pVal","pAdj")
+
+SSCohort1.up<-subset(SSCohort1,SSCohort1$Group=="COVID")
+SSCohort02.up<-subset(SSCohort02,SSCohort02$Group=="COVID")
+SSCohort1.down<-subset(SSCohort1,SSCohort1$Group=="control")
+SSCohort02.down<-subset(SSCohort02,SSCohort02$Group=="control")
+SSCohort.1.02.up<-merge(SSCohort1.up,SSCohort02.up,by="genes")
+SSCohort.1.02.down<-merge(SSCohort1.down,SSCohort02.down,by="genes")
+```
+
+```{r}
+EVvVV.simp.up<-UP.EVvVV[c(2,4,8)]
+EVvVV.simp.down<-DOWN.EVvVV[c(2,4,8)]
+```
+
+
+```{r}
+UP.EVvSSCOVID<-merge(EVvVV.simp.up,SSCohort.1.02.up,by="genes")
+UP.EVvSSCOVID.cl13<-merge(UP.EVvSSCOVID,UP.CvN.converted,by="genes")
+
+UP.Cl13SSCOVID<-merge(UP.CvN.converted,SSCohort.1.02.up,by="genes")
+UP.Cl13SSCOVID.EV<-merge(UP.Cl13SSCOVID,EVvVV.simp.up,by="genes")
+
+write.table(UP.Cl13SSCOVID.EV$genes, file = "C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//Cl13_SSCOVID_EV.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+
+write.table(UP.EVvSSCOVID$genes, file = "C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//UP_EV_SSCOVID.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+
+write.table(UP.Cl13SSCOVID$genes, file = "C://Users//DinaZ//Desktop//UCSD_Documents_DZ//CAL-1_RNA_Seq_refined_simplified_files//UP_Cl13_SSCOVID.txt", quote=FALSE, sep = "\t", row.names = FALSE)
+```
+
+
